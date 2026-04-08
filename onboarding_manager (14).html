@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オンボーディング管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1a2744;
+  --navy-mid:#243058;
+  --navy-light:#2e3d6e;
+  --accent:#4f7ef8;
+  --accent-light:#eef2ff;
+  --green:#10b981;
+  --green-light:#ecfdf5;
+  --amber:#f59e0b;
+  --amber-light:#fffbeb;
+  --red:#ef4444;
+  --red-light:#fef2f2;
+  --surface:#ffffff;
+  --bg:#f0f2f8;
+  --border:#e2e6f0;
+  --text-primary:#1a2744;
+  --text-secondary:#6b7a9e;
+  --text-muted:#9aa3be;
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:14px;
+  --shadow-sm:0 1px 3px rgba(26,39,68,.08),0 1px 2px rgba(26,39,68,.05);
+  --shadow-md:0 4px 12px rgba(26,39,68,.1),0 2px 4px rgba(26,39,68,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',-apple-system,'Hiragino Sans',sans-serif;font-size:14px;color:var(--text-primary);background:var(--bg);min-height:100vh}
+.page{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-icon{width:36px;height:36px;background:var(--navy);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.topbar-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.topbar h1{font-size:18px;font-weight:600;color:var(--navy);letter-spacing:-.01em}
+.topbar-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+
+.btn-primary{background:var(--navy);color:#fff;border:none;border-radius:var(--radius-md);padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .15s;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{background:var(--navy-light)}
+.btn-secondary{background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-secondary:hover{background:var(--bg);border-color:#c8cfe8}
+
+.add-member-form{background:var(--surface);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-label{font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;letter-spacing:.02em}
+.form-input{width:100%;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;color:var(--text-primary);transition:border-color .15s;background:var(--surface)}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,126,248,.12)}
+.attr-input-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.flags-check-group{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap}
+.flag-check-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);cursor:pointer}
+.flag-check-item input{cursor:pointer}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+.cal-section{background:var(--surface);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-title{font-size:15px;font-weight:600;color:var(--navy);min-width:90px;text-align:center}
+.cal-nav-btn{width:28px;height:28px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.cal-nav-btn:hover{background:var(--bg);border-color:#c8cfe8}
+.cal-stats{display:flex;gap:16px}
+.tl-stat{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+.tl-stat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tl-stat strong{color:var(--text-primary);font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:10px;font-weight:600;color:var(--text-muted);text-align:center;padding:4px 0;letter-spacing:.05em}
+.cal-cell{min-height:56px;border-radius:var(--radius-sm);padding:6px 7px;background:var(--bg);border:1px solid transparent;cursor:default;transition:all .15s}
+.cal-cell.clickable{cursor:pointer}
+.cal-cell.clickable:hover{background:#e8ebf5;border-color:#c8cfe8}
+.cal-cell.other-month{opacity:.3}
+.cal-cell.today{background:var(--accent-light);border-color:#c7d5fc}
+.cal-cell.has-event{background:var(--surface);border-color:var(--border)}
+.cal-cell.has-overdue{border-color:#fca5a5;background:#fff5f5}
+.cal-day-num{font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:3px}
+.cal-cell.today .cal-day-num{color:var(--accent);font-weight:700}
+.cal-event{font-size:9px;font-weight:600;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+.ev-join{background:var(--green);color:#fff}
+.ev-warn{background:#fee2e2;color:#b91c1c}
+.ev-task{background:#dbeafe;color:#1e40af}
+.cal-legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)}
+.cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)}
+.cal-legend-dot{width:10px;height:10px;border-radius:3px}
+
+.cal-popup-overlay{display:none;position:fixed;inset:0;background:rgba(26,39,68,.35);z-index:100;align-items:center;justify-content:center}
+.cal-popup-overlay.open{display:flex}
+.cal-popup{background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;min-width:280px;max-width:360px;width:92%;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+.cal-popup-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-popup-date{font-size:15px;font-weight:600;color:var(--navy)}
+.cal-popup-close{width:26px;height:26px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer;font-size:14px;transition:all .15s}
+.cal-popup-close:hover{background:var(--bg);color:var(--text-primary)}
+.cal-popup-section{margin-bottom:12px}
+.cal-popup-section-title{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:.07em;margin-bottom:6px;text-transform:uppercase}
+.cal-popup-item{font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.popup-item-join{background:var(--green-light);color:#065f46}
+.popup-item-over{background:var(--red-light);color:#991b1b}
+.popup-item-warn{background:var(--accent-light);color:#1e3a8a}
+.popup-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:currentColor}
+
+.smarthr-note{font-size:11px;color:var(--text-secondary);background:var(--accent-light);border:1px solid #c7d5fc;border-radius:var(--radius-md);padding:8px 14px;margin-bottom:1.25rem;display:flex;align-items:center;gap:7px}
+.smarthr-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+.save-indicator{font-size:11px;color:var(--green);text-align:right;margin-bottom:6px;min-height:16px;font-weight:500}
+
+.section-label{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:.08em;margin-bottom:10px;text-transform:uppercase}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
+.card:hover{box-shadow:var(--shadow-md)}
+.card.archived{opacity:.55;box-shadow:none}
+.card-header{padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px}
+.card-header:hover{background:#fafbfe}
+.card-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.member-info{display:flex;align-items:center;gap:12px;min-width:0}
+.avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;letter-spacing:.02em}
+.av-blue{background:#dbeafe;color:#1e3a8a}
+.av-teal{background:#ccfbf1;color:#134e4a}
+.av-amber{background:#fef3c7;color:#78350f}
+.av-coral{background:#ffe4e6;color:#9f1239}
+.av-gray{background:#f1f5f9;color:#334155}
+.member-name{font-size:14px;font-weight:600;color:var(--navy)}
+.member-sub{font-size:11px;color:var(--text-secondary);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.flag-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.flag-field{background:var(--green-light);color:#065f46;border:1px solid #a7f3d0}
+.flag-female{background:#fdf2f8;color:#86198f;border:1px solid #f0abfc}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;font-weight:500}
+.badge-soon{background:var(--amber-light);color:#92400e;border:1px solid #fde68a}
+.badge-active{background:var(--accent-light);color:#1e3a8a;border:1px solid #c7d5fc}
+.badge-done{background:var(--green-light);color:#065f46;border:1px solid #a7f3d0}
+.badge-archived{background:var(--bg);color:var(--text-muted);border:1px solid var(--border)}
+.card-actions{display:flex;align-items:center;gap:5px}
+.action-btn{font-size:11px;padding:3px 9px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid var(--border);color:var(--text-secondary);background:var(--surface);white-space:nowrap;transition:all .15s;font-family:inherit}
+.action-btn:hover{background:var(--bg);border-color:#c8cfe8}
+.action-btn-danger{border-color:#fca5a5;color:#b91c1c}
+.action-btn-danger:hover{background:var(--red-light)}
+.action-btn-restore{border-color:#6ee7b7;color:#065f46}
+.action-btn-restore:hover{background:var(--green-light)}
+.chevron{font-size:10px;color:var(--text-muted);transition:transform .2s;display:inline-block}
+.chevron.open{transform:rotate(180deg)}
+.prog-bg{height:4px;background:var(--bg);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.prog-fill{height:100%;border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)}
+.progress-section{padding:0 1.25rem .875rem}
+.card-body{border-top:1px solid var(--border)}
+.phase-header{padding:8px 1.25rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border);background:#fafbfe;transition:background .1s}
+.phase-header:hover{background:#f3f5fd}
+.phase-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--navy)}
+.phase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-before{background:var(--accent)}
+.dot-join{background:var(--green)}
+.dot-after{background:#8b5cf6}
+.phase-count{font-size:11px;color:var(--text-muted);font-weight:400}
+.alert-dot{width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;margin-left:4px;vertical-align:middle}
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:9px 1.25rem;border-bottom:1px solid var(--border);transition:background .1s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:#fafbfe}
+.task-row.task-done-row{opacity:.45}
+.check{width:16px;height:16px;border-radius:4px;border:1.5px solid #c8cfe8;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;background:var(--surface);transition:all .15s}
+.check:hover{border-color:var(--green)}
+.check.done{background:var(--green);border-color:var(--green)}
+.check.done::after{content:'';display:block;width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px)}
+.task-content{flex:1;min-width:0}
+.task-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.task-name{font-size:12px;line-height:1.5;color:var(--text-primary)}
+.task-name.done{color:var(--text-muted);text-decoration:line-through}
+.task-note{font-size:11px;color:var(--text-muted);margin-top:2px;font-style:italic}
+.task-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.owner-pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.own-hr{background:#dbeafe;color:#1e3a8a}
+.own-it{background:#fef3c7;color:#78350f}
+.own-somu{background:#ccfbf1;color:#134e4a}
+.own-other{background:var(--bg);color:var(--text-secondary)}
+.due-ok{font-size:11px;color:var(--green);font-weight:500}
+.due-warn{font-size:11px;color:var(--amber);font-weight:500}
+.due-over{font-size:11px;color:var(--red);font-weight:600}
+.memo-btn{font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 8px;border-radius:20px;border:1px solid var(--border);white-space:nowrap;background:var(--surface);transition:all .15s;font-family:inherit}
+.memo-btn:hover{background:var(--bg);border-color:#c8cfe8;color:var(--text-secondary)}
+.comment-area{background:var(--bg);margin:6px 0 2px;border-radius:var(--radius-sm);padding:8px 10px;border:1px solid var(--border)}
+.comment-item{font-size:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.comment-item:last-of-type{border-bottom:none;margin-bottom:4px;padding-bottom:0}
+.comment-meta{font-size:10px;color:var(--text-muted);margin-bottom:2px;font-weight:500}
+.comment-text{color:var(--text-primary)}
+.comment-input-row{display:flex;gap:6px;margin-top:6px}
+.comment-input-row input{flex:1;font-size:12px;height:30px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);outline:none;font-family:inherit;transition:border-color .15s}
+.comment-input-row input:focus{border-color:var(--accent)}
+.comment-input-row button{font-size:12px;padding:0 12px;height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s;color:var(--text-secondary)}
+.comment-input-row button:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.done-toggle{font-size:11px;color:var(--text-muted);padding:7px 1.25rem;cursor:pointer;display:flex;align-items:center;gap:5px;border-top:1px dashed var(--border);transition:color .15s}
+.done-toggle:hover{color:var(--text-secondary)}
+.empty-phase{padding:10px 1.25rem;font-size:12px;color:var(--text-muted)}
+.empty-list{padding:3rem 1rem;text-align:center;font-size:13px;color:var(--text-muted)}
+.archive-section-toggle{font-size:12px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:10px;padding:4px 0;transition:color .15s}
+.archive-section-toggle:hover{color:var(--text-secondary)}
+
+.add-task-btn{font-size:11px;padding:3px 9px;border-radius:20px;cursor:pointer;border:1px solid var(--border);color:var(--text-muted);background:var(--surface);white-space:nowrap;transition:all .15s;font-family:inherit}
+.add-task-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.add-task-form{padding:10px 1.25rem 12px;background:var(--bg);border-bottom:1px solid var(--border)}
+.add-task-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.add-task-form input{width:100%;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;outline:none;font-family:inherit;background:var(--surface);transition:border-color .15s;color:var(--text-primary)}
+.add-task-form input:focus{border-color:var(--accent)}
+.add-task-form-row{margin-bottom:8px}
+.add-task-form-row input{width:100%}
+.add-task-form-actions{display:flex;gap:6px;justify-content:flex-end}
+.btn-task-save{background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);padding:6px 16px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-task-save:hover{background:var(--navy-light)}
+.btn-task-cancel{font-size:12px;padding:6px 12px;cursor:pointer;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);font-family:inherit;color:var(--text-secondary);transition:all .15s}
+.btn-task-cancel:hover{background:var(--bg)}
+
+.val-warn{color:var(--red) !important}
+.settings-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-md);padding:7px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px}
+.settings-btn:hover{background:var(--bg);border-color:#c8cfe8}
+.settings-panel{background:var(--surface);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.settings-panel h3{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px}
+.settings-members-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.settings-member-tag{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--text-secondary)}
+.settings-member-tag button{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:0;line-height:1;transition:color .15s}
+.settings-member-tag button:hover{color:var(--red)}
+.settings-add-row{display:flex;gap:6px}
+.settings-add-row input{flex:1;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;outline:none;font-family:inherit;transition:border-color .15s}
+.settings-add-row input:focus{border-color:var(--accent)}
+.settings-add-row button{height:32px;padding:0 14px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s}
+.settings-add-row button:hover{background:var(--navy-light)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div>
+        <h1>オンボーディング管理</h1>
+        <div class="topbar-sub">SmartHR連携 · 入社準備トラッカー</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="settings-btn" id="toggleSettings">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        担当者設定
+      </button>
+      <button class="btn-primary" id="toggleForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        入社者を追加
+      </button>
+    </div>
+  </div>
+
+  <div id="settingsPanel" style="display:none">
+    <div class="settings-panel">
+      <h3>担当者リスト</h3>
+      <div class="settings-members-list" id="staffList"></div>
+      <div class="settings-add-row">
+        <input type="text" id="newStaffName" placeholder="担当者名を入力（例：佐藤）">
+        <button onclick="addStaff()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="staffDatalist"></datalist>
+
+  <div id="addForm" style="display:none">
+    <div class="add-member-form">
+      <div class="form-grid">
+        <div><div class="form-label">イニシャル</div><input class="form-input" type="text" id="newName" placeholder="例：T.S" maxlength="10"></div>
+        <div><div class="form-label">部署</div><input class="form-input" type="text" id="newDept" placeholder="例：営業部"></div>
+      </div>
+      <div class="form-grid">
+        <div><div class="form-label">入社日</div><input class="form-input" type="date" id="newDate"></div>
+        <div><div class="form-label">担当HR</div><input class="form-input" type="text" id="newHR" placeholder="例：佐藤" list="staffDatalist"></div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <div class="form-label">属性</div>
+          <input class="form-input" type="text" id="newAttr" placeholder="例：現場配属・女性など">
+          <div class="attr-input-hint">該当する属性を自由に入力してください</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn-secondary" id="cancelForm">キャンセル</button>
+        <button class="btn-primary" id="submitMember">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cal-section">
+    <div class="cal-header">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
+      </div>
+      <div class="cal-stats">
+        <div class="tl-stat"><span class="tl-stat-dot" style="background:#378ADD"></span>進行中 <strong id="mActive">0</strong>名</div>
+        <div class="tl-stat"><span class="tl-stat-dot" style="background:#059669"></span>今月入社 <strong id="mSoon">0</strong>名</div>
+        <div class="tl-stat"><span class="tl-stat-dot" style="background:#E24B4A"></span>期限超過 <strong id="mOverdue">0</strong>件</div>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#059669"></div>入社日</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#E6F1FB;border:0.5px solid #B5D4F4"></div>期限が近いタスク</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#FCEBEB;border:0.5px solid #F09595"></div>期限超過タスク</div>
+    </div>
+  </div>
+
+  <div class="smarthr-note">
+    <span class="smarthr-dot"></span>
+    <span>書類回収・社保手続き・マイナンバー・雇用契約はSmartHRで管理</span>
+  </div>
+
+  <div class="save-indicator" id="saveIndicator"></div>
+  <div class="section-label">入社者一覧</div>
+  <div id="memberList"></div>
+</div>
+
+<div class="cal-popup-overlay" id="calPopupOverlay" onclick="closeCalPopup(event)">
+  <div class="cal-popup">
+    <div class="cal-popup-header">
+      <div class="cal-popup-date" id="calPopupDate"></div>
+      <div class="cal-popup-close" onclick="closeCalPopupDirect()">&#x2715;</div>
+    </div>
+    <div id="calPopupBody"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://dwapbmlrttogcwnentje.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3YXBibWxydHRvZ2N3bmVudGplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MTU1MjAsImV4cCI6MjA5MTE5MTUyMH0.LwkTjqEiKHTDSjIyOZS2zrF3X3dTwrrsE7tuiOweWsc';
+const DB_ROW_ID=1;
+
+async function sbFetch(path,opts={}){
+  const res=await fetch(SUPABASE_URL+path,{
+    ...opts,
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,...(opts.headers||{})}
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.status===204?null:res.json();
+}
+
+async function loadState(){
+  try{
+    showSaveIndicator('読み込み中...');
+    const rows=await sbFetch(`/rest/v1/members?id=eq.${DB_ROW_ID}&select=data`);
+    if(rows&&rows.length>0&&rows[0].data){
+      const loaded=rows[0].data;
+      loaded.members.forEach(m=>{
+        if(!m.phaseExpanded) m.phaseExpanded={before:false,join:false,after:false};
+        if(!m.showDone) m.showDone={before:false,join:false,after:false};
+        if(m.archived===undefined) m.archived=false;
+        m.expanded=false;
+      });
+      showSaveIndicator('');
+      return loaded;
+    }
+  }catch(e){console.error('load error',e);}
+  showSaveIndicator('');
+  return {members:[],nextId:1};
+}
+
+async function saveState(){
+  try{
+    const payload={data:state};
+    const rows=await sbFetch(`/rest/v1/members?id=eq.${DB_ROW_ID}&select=id`);
+    if(rows&&rows.length>0){
+      await sbFetch(`/rest/v1/members?id=eq.${DB_ROW_ID}`,{method:'PATCH',body:JSON.stringify(payload)});
+    } else {
+      await sbFetch(`/rest/v1/members`,{method:'POST',body:JSON.stringify({id:DB_ROW_ID,...payload}),headers:{'Prefer':'return=minimal'}});
+    }
+    showSaveIndicator('保存しました');
+  }catch(e){showSaveIndicator('保存できませんでした');console.error(e);}
+}
+
+let saveTimer=null;
+function debouncedSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveState,800);}
+
+function showSaveIndicator(msg){
+  const el=document.getElementById('saveIndicator');
+  if(el) el.textContent=msg;
+  if(msg==='保存しました') setTimeout(()=>{if(el)el.textContent='';},2500);
+}
+
+let state={members:[],nextId:1};
+const ALL_TASKS=[
+  {phase:'before',name:'通勤方法確認',owner:'人事担当',offsetDays:-14,note:'',flags:[]},
+  {phase:'before',name:'PC手配',owner:'IT担当',offsetDays:-10,note:'',flags:[]},
+  {phase:'before',name:'社員番号取得',owner:'IT担当',offsetDays:-7,note:'',flags:[]},
+  {phase:'before',name:'社内ネットワークID発行依頼',owner:'IT担当',offsetDays:-5,note:'',flags:[]},
+  {phase:'before',name:'ICカード発行',owner:'総務担当',offsetDays:-5,note:'',flags:[]},
+  {phase:'before',name:'机・椅子の手配',owner:'総務担当',offsetDays:-10,note:'',flags:[]},
+  {phase:'before',name:'名刺',owner:'総務担当',offsetDays:-5,note:'',flags:[]},
+  {phase:'before',name:'入社日貸与品発送＋発送メール',owner:'人事担当',offsetDays:-1,note:'本社・本社工場以外の場合',flags:[]},
+  {phase:'join',name:'辞令・辞令簿',owner:'人事担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'印章セット準備',owner:'総務担当',offsetDays:0,note:'データ印・スタンプ台・氏名印・訂正印（ム・カ・ソ配属者のみ）',flags:[]},
+  {phase:'join',name:'社章・名札',owner:'総務担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'食事カード',owner:'総務担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'ケーブルカレンダー・略号表',owner:'総務担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'就業規則',owner:'人事担当',offsetDays:0,note:'本社工場の場合のみ',flags:['honsha']},
+  {phase:'join',name:'出勤簿・有給休暇台帳データ更新',owner:'IT担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'本社工場電話配置図の更新',owner:'IT担当',offsetDays:0,note:'',flags:['honsha']},
+  {phase:'join',name:'掲示作成・入退社名簿記載',owner:'人事担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'社員住所録の更新',owner:'人事担当',offsetDays:0,note:'',flags:[]},
+  {phase:'join',name:'作業服セット（ブルゾン・スラックス・空調服）',owner:'総務担当',offsetDays:0,note:'技能職シャツ要注意',flags:['field']},
+  {phase:'join',name:'安全具セット（ヘルメット・安全靴）',owner:'総務担当',offsetDays:0,note:'',flags:['field']},
+  {phase:'join',name:'生産部ロッカー＋ロッカー配置図',owner:'総務担当',offsetDays:0,note:'',flags:['field']},
+  {phase:'join',name:'女性事務服・リボン・借用申込書',owner:'総務担当',offsetDays:0,note:'',flags:['female']},
+  {phase:'after',name:'ISO書類セット準備',owner:'人事担当',offsetDays:3,note:'個人別教育・訓練カード・業務経歴書・チャレンジシート・自己申告書',flags:[]},
+];
+const PHASES=[
+  {key:'before',label:'入社前',dotClass:'dot-before'},
+  {key:'join',label:'入社日',dotClass:'dot-join'},
+  {key:'after',label:'入社後',dotClass:'dot-after'},
+];
+const AVCOLORS=['av-blue','av-teal','av-amber','av-coral','av-gray'];
+const OWNER_VIEWS={hr:'人事担当',it:'IT担当',somu:'総務担当'};
+
+function ownerPillClass(o){
+  return 'own-other';
+}
+function buildTasks(joinDate,flags){
+  const jd=new Date(joinDate);
+  return ALL_TASKS
+    .filter(t=>t.flags.length===0||t.flags.some(f=>flags.includes(f)))
+    .map((tmpl,i)=>{
+      const due=new Date(jd);
+      due.setDate(due.getDate()+tmpl.offsetDays);
+      return {id:i,phase:tmpl.phase,name:tmpl.name,owner:'',
+        due:due.toISOString().split('T')[0],note:tmpl.note,done:false,comments:[]};
+    });
+}
+
+let currentView='all';
+let showArchived=false;
+let openComments={};
+let staffList=[];
+
+async function loadStaff(){
+  try{
+    const rows=await sbFetch(`/rest/v1/members?id=eq.2&select=data`);
+    if(rows&&rows.length>0&&rows[0].data&&rows[0].data.staffList){
+      staffList=rows[0].data.staffList;
+    }
+  }catch(e){console.error('staff load error',e);}
+  renderStaffDatalist();
+  renderStaffList();
+}
+
+async function saveStaff(){
+  try{
+    const payload={data:{staffList}};
+    const rows=await sbFetch(`/rest/v1/members?id=eq.2&select=id`);
+    if(rows&&rows.length>0){
+      await sbFetch(`/rest/v1/members?id=eq.2`,{method:'PATCH',body:JSON.stringify(payload)});
+    } else {
+      await sbFetch(`/rest/v1/members`,{method:'POST',body:JSON.stringify({id:2,...payload}),headers:{'Prefer':'return=minimal'}});
+    }
+  }catch(e){console.error('staff save error',e);}
+}
+
+function renderStaffDatalist(){
+  const dl=document.getElementById('staffDatalist');
+  dl.innerHTML=staffList.map(s=>`<option value="${s}">`).join('');
+}
+
+function renderStaffList(){
+  const el=document.getElementById('staffList');
+  if(!el) return;
+  if(staffList.length===0){
+    el.innerHTML=`<span style="font-size:12px;color:var(--text-muted)">まだ担当者が登録されていません</span>`;
+    return;
+  }
+  el.innerHTML=staffList.map((s,i)=>`
+    <div class="settings-member-tag">
+      <span>${s}</span>
+      <button onclick="removeStaff(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addStaff(){
+  const input=document.getElementById('newStaffName');
+  const name=input.value.trim();
+  if(!name) return;
+  if(!staffList.includes(name)) staffList.push(name);
+  input.value='';
+  saveStaff();
+  renderStaffList();
+  renderStaffDatalist();
+}
+
+function removeStaff(i){
+  staffList.splice(i,1);
+  saveStaff();
+  renderStaffList();
+  renderStaffDatalist();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='newStaffName') addStaff();
+});
+
+function daysUntil(ds){
+  const d=new Date(ds),t=new Date();
+  t.setHours(0,0,0,0);d.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function formatDue(ds,done){
+  if(done) return {cls:'due-ok',label:'完了'};
+  const d=daysUntil(ds),p=ds.split('-');
+  const label=p[1]+'/'+p[2];
+  if(d<0) return {cls:'due-over',label:'期限超過'};
+  if(d<=3) return {cls:'due-warn',label:label+'まで'};
+  return {cls:'due-ok',label:label+'まで'};
+}
+function getProgress(tasks){
+  const done=tasks.filter(t=>t.done).length,total=tasks.length;
+  return {done,total,pct:total?Math.round(done/total*100):0};
+}
+function hasOverdueInPhase(tasks,phase){
+  return tasks.some(t=>t.phase===phase&&!t.done&&daysUntil(t.due)<0);
+}
+function updateMetrics(){
+  const now=new Date(),tm=now.getMonth(),ty=now.getFullYear();
+  let active=0,soon=0,overdue=0;
+  state.members.filter(m=>!m.archived).forEach(m=>{
+    const p=getProgress(m.tasks);
+    if(p.pct<100) active++;
+    const jd=new Date(m.joinDate);
+    if(jd.getMonth()===tm&&jd.getFullYear()===ty&&daysUntil(m.joinDate)>0) soon++;
+    m.tasks.forEach(t=>{if(!t.done&&daysUntil(t.due)<0) overdue++;});
+  });
+  document.getElementById('mActive').textContent=active;
+  document.getElementById('mSoon').textContent=soon;
+  document.getElementById('mOverdue').textContent=overdue;
+  renderCalendar();
+}
+
+let calBase=new Date();calBase.setDate(1);
+
+function calPrev(){calBase.setMonth(calBase.getMonth()-1);renderCalendar();}
+function calNext(){calBase.setMonth(calBase.getMonth()+1);renderCalendar();}
+
+function renderCalendar(){
+  const members=state.members.filter(m=>!m.archived);
+  const now=new Date();now.setHours(0,0,0,0);
+  const y=calBase.getFullYear(),mo=calBase.getMonth();
+  document.getElementById('calTitle').textContent=`${y}年${mo+1}月`;
+
+  const joinDates={};
+  const taskDates={};
+  members.forEach(m=>{
+    const jd=m.joinDate;
+    if(!joinDates[jd]) joinDates[jd]=[];
+    joinDates[jd].push(m.name);
+    m.tasks.forEach(t=>{
+      if(!t.done){
+        if(!taskDates[t.due]) taskDates[t.due]={warn:[],over:[]};
+        const d=daysUntil(t.due);
+        if(d<0) taskDates[t.due].over.push(t.name);
+        else if(d<=5) taskDates[t.due].warn.push(t.name);
+      }
+    });
+  });
+
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  ['月','火','水','木','金','土','日'].forEach(d=>{
+    const el=document.createElement('div');
+    el.className='cal-dow';el.textContent=d;
+    grid.appendChild(el);
+  });
+
+  const firstDay=new Date(y,mo,1);
+  const lastDay=new Date(y,mo+1,0);
+  let startDow=(firstDay.getDay()+6)%7;
+
+  for(let i=0;i<startDow;i++){
+    const d=new Date(y,mo,1-startDow+i);
+    const cell=makeCalCell(d,now,joinDates,taskDates,true);
+    grid.appendChild(cell);
+  }
+  for(let d=1;d<=lastDay.getDate();d++){
+    const date=new Date(y,mo,d);
+    const cell=makeCalCell(date,now,joinDates,taskDates,false);
+    grid.appendChild(cell);
+  }
+  const remaining=(7-((startDow+lastDay.getDate())%7))%7;
+  for(let i=1;i<=remaining;i++){
+    const d=new Date(y,mo+1,i);
+    const cell=makeCalCell(d,now,joinDates,taskDates,true);
+    grid.appendChild(cell);
+  }
+}
+
+function openCalPopup(ds,joins,tasks){
+  const d=new Date(ds);
+  const label=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  document.getElementById('calPopupDate').textContent=label;
+  let html='';
+  if(joins.length>0){
+    html+=`<div class="cal-popup-section"><div class="cal-popup-section-title">入社日</div>`;
+    joins.forEach(name=>{
+      html+=`<div class="cal-popup-item popup-item-join"><span class="popup-dot"></span>${name}</div>`;
+    });
+    html+=`</div>`;
+  }
+  if(tasks.over.length>0){
+    html+=`<div class="cal-popup-section"><div class="cal-popup-section-title">期限超過タスク</div>`;
+    tasks.over.forEach(name=>{
+      html+=`<div class="cal-popup-item popup-item-over"><span class="popup-dot"></span>${name}</div>`;
+    });
+    html+=`</div>`;
+  }
+  if(tasks.warn.length>0){
+    html+=`<div class="cal-popup-section"><div class="cal-popup-section-title">期限が近いタスク（5日以内）</div>`;
+    tasks.warn.forEach(name=>{
+      html+=`<div class="cal-popup-item popup-item-warn"><span class="popup-dot"></span>${name}</div>`;
+    });
+    html+=`</div>`;
+  }
+  if(!html) html=`<div style="font-size:13px;color:#aaa;padding:4px 0">予定はありません</div>`;
+  document.getElementById('calPopupBody').innerHTML=html;
+  document.getElementById('calPopupOverlay').classList.add('open');
+}
+
+function closeCalPopup(e){
+  if(e.target===document.getElementById('calPopupOverlay')) closeCalPopupDirect();
+}
+function closeCalPopupDirect(){
+  document.getElementById('calPopupOverlay').classList.remove('open');
+}
+
+function makeCalCell(date,now,joinDates,taskDates,otherMonth){
+  const cell=document.createElement('div');
+  const ds=date.toISOString().split('T')[0];
+  const isToday=date.toDateString()===now.toDateString();
+  const joins=joinDates[ds]||[];
+  const tasks=taskDates[ds]||{warn:[],over:[]};
+  const hasJoin=joins.length>0;
+  const hasWarn=tasks.warn.length>0;
+  const hasOver=tasks.over.length>0;
+  const hasAnything=hasJoin||hasWarn||hasOver;
+
+  let cls='cal-cell';
+  if(otherMonth) cls+=' other-month';
+  if(isToday) cls+=' today';
+  if(hasAnything) cls+=' has-event clickable';
+  if(hasOver) cls+=' has-overdue';
+  cell.className=cls;
+
+  if(hasAnything){
+    cell.addEventListener('click',()=>openCalPopup(ds,joins,tasks));
+  }
+
+  const num=document.createElement('div');
+  num.className='cal-day-num';num.textContent=date.getDate();
+  cell.appendChild(num);
+
+  joins.forEach(name=>{
+    const ev=document.createElement('div');
+    ev.className='cal-event ev-join';
+    ev.textContent=name;
+    cell.appendChild(ev);
+  });
+  if(hasOver){
+    const ev=document.createElement('div');
+    ev.className='cal-event ev-warn';
+    ev.textContent=`期限超過 ${tasks.over.length}件`;
+    cell.appendChild(ev);
+  } else if(hasWarn){
+    const ev=document.createElement('div');
+    ev.className='cal-event ev-task';
+    ev.textContent=`期限 ${tasks.warn.length}件`;
+    cell.appendChild(ev);
+  }
+  return cell;
+}
+
+function renderTask(mi,t,showOwner){
+  const due=formatDue(t.due,t.done);
+  const ck=`${state.members[mi].id}-${t.id}`;
+  const dueEditKey=`dueedit-${ck}`;
+  const isDueEditing=!!openComments[dueEditKey];
+  const isOpen=!!openComments[ck];
+  const cCount=t.comments.length;
+  const archived=state.members[mi].archived;
+  let commentsHTML='';
+  if(isOpen){
+    const items=t.comments.map(c=>`<div class="comment-item"><div class="comment-meta">${c.author} · ${c.date}</div><div class="comment-text">${c.text}</div></div>`).join('');
+    commentsHTML=`<div class="comment-area">${items}<div class="comment-input-row"><input type="text" id="ci-${ck}" placeholder="メモを追加..."><button onclick="addComment(${mi},${t.id},'${ck}')">追加</button></div></div>`;
+  }
+  const noteHTML=t.note?`<div class="task-note">${t.note}</div>`:'';
+  const ownerHTML=showOwner?`<span class="owner-pill ${ownerPillClass(t.owner)}">${t.owner}</span>`:'';
+  const checkClick=archived?'':`onclick="toggleTask(${mi},${t.id})"`;
+  const dueHTML=archived
+    ?`<span class="${due.cls}">${due.label}</span>`
+    :isDueEditing
+      ?`<input type="date" id="due-input-${ck}" value="${t.due}" style="font-size:11px;height:24px;padding:0 5px;border:0.5px solid #185FA5;border-radius:5px;outline:none;color:#1a1a1a" onchange="saveDue(${mi},${t.id},'${ck}','${dueEditKey}')" onblur="saveDue(${mi},${t.id},'${ck}','${dueEditKey}')">`
+      :`<span class="${due.cls}" style="cursor:pointer;text-decoration:underline dotted" onclick="startDueEdit('${dueEditKey}')" title="クリックして期限を編集">${due.label}</span>`;
+  return `<div class="task-row ${t.done?'task-done-row':''}">
+    <div class="check ${t.done?'done':''}" ${checkClick} style="${archived?'cursor:default':''}"></div>
+    <div class="task-content">
+      <div class="task-top">
+        <span class="task-name ${t.done?'done':''}">${t.name}</span>
+        <div class="task-right">
+          ${ownerHTML}
+          ${dueHTML}
+          <span class="memo-btn" onclick="toggleComment('${ck}')">${cCount>0?'メモ('+cCount+')':'メモ'}</span>
+        </div>
+      </div>
+      ${noteHTML}${commentsHTML}
+    </div>
+  </div>`;
+}
+
+function startDueEdit(dueEditKey){
+  openComments[dueEditKey]=true;
+  render();
+  setTimeout(()=>{
+    const id='due-input-'+dueEditKey.replace('dueedit-','');
+    const el=document.getElementById(id);
+    if(el) el.focus();
+  },50);
+}
+
+function saveDue(mi,tid,ck,dueEditKey){
+  const el=document.getElementById(`due-input-${ck}`);
+  if(!el) return;
+  const val=el.value;
+  if(val){
+    const t=state.members[mi].tasks.find(t=>t.id===tid);
+    if(t) t.due=val;
+    debouncedSave();
+  }
+  openComments[dueEditKey]=false;
+  render();
+}
+
+function renderMemberCard(m,mi){
+  const prog=getProgress(m.tasks);
+  const days=daysUntil(m.joinDate);
+  let badge='';
+  if(m.archived) badge=`<span class="badge badge-archived">アーカイブ</span>`;
+  else if(prog.pct===100) badge=`<span class="badge badge-done">完了</span>`;
+  else if(days>0) badge=`<span class="badge badge-soon">入社まで${days}日</span>`;
+  else badge=`<span class="badge badge-active">オンボーディング中</span>`;
+  const av=AVCOLORS[mi%AVCOLORS.length];
+  const progColor=m.archived?'#ccc':(prog.pct===100?'#1D9E75':(prog.pct>=50?'#185FA5':'#BA7517'));
+  const jp=m.joinDate.split('-');
+  const flagsHTML=m.attr?`<span class="flag-badge flag-field">${m.attr}</span>`:'';
+  const archiveBtn=m.archived
+    ?`<button class="action-btn action-btn-restore" onclick="event.stopPropagation();restoreMember(${mi})">復元</button>
+       <button class="action-btn action-btn-danger" onclick="event.stopPropagation();deleteMember(${mi})">削除</button>`
+    :`<button class="action-btn" onclick="event.stopPropagation();archiveMember(${mi})">アーカイブ</button>`;
+
+  let bodyHTML='';
+  if(m.expanded){
+    PHASES.forEach(ph=>{
+      const phaseTasks=m.tasks.filter(t=>t.phase===ph.key);
+      const pendingTasks=[...phaseTasks.filter(t=>!t.done)].sort((a,b)=>daysUntil(a.due)-daysUntil(b.due));
+      const doneTasks=phaseTasks.filter(t=>t.done);
+      const isOpen=m.phaseExpanded[ph.key];
+      const alertDot=(!m.archived&&hasOverdueInPhase(m.tasks,ph.key))?`<span class="alert-dot"></span>`:'';
+      const formKey=`addtask-${mi}-${ph.key}`;
+      const isFormOpen=!!openComments[formKey];
+      let phaseBody='';
+      if(isOpen){
+        const showDone=m.showDone[ph.key];
+        if(phaseTasks.length===0&&!isFormOpen){
+          phaseBody=`<div class="empty-phase">タスクなし</div>`;
+        } else {
+          pendingTasks.forEach(t=>{phaseBody+=renderTask(mi,t,true);});
+          if(doneTasks.length>0){
+            phaseBody+=`<div class="done-toggle" onclick="toggleShowDone(${mi},'${ph.key}')"><span class="chevron ${showDone?'open':''}">▼</span> 完了済み ${doneTasks.length}件を${showDone?'隠す':'表示する'}</div>`;
+            if(showDone) doneTasks.forEach(t=>{phaseBody+=renderTask(mi,t,true);});
+          }
+        }
+        if(isFormOpen){
+          const jd=m.joinDate;
+          phaseBody+=`<div class="add-task-form">
+            <div class="add-task-form-row"><input type="text" id="at-name-${formKey}" placeholder="タスク名（必須）"></div>
+            <div class="add-task-form-grid">
+              <input type="text" id="at-owner-${formKey}" placeholder="担当者名" list="staffDatalist">
+              <input type="date" id="at-due-${formKey}" value="${jd}">
+            </div>
+            <div class="add-task-form-actions">
+              <button class="btn-task-cancel" onclick="closeAddTaskForm('${formKey}')">キャンセル</button>
+              <button class="btn-task-save" onclick="saveNewTask(${mi},'${ph.key}','${formKey}')">追加する</button>
+            </div>
+          </div>`;
+        }
+      }
+      const addBtn=!m.archived?`<button class="add-task-btn" onclick="event.stopPropagation();openAddTaskForm(${mi},'${ph.key}','${formKey}')">+ タスク追加</button>`:'';
+      bodyHTML+=`<div>
+        <div class="phase-header" onclick="togglePhase(${mi},'${ph.key}')">
+          <div class="phase-label">
+            <span class="phase-dot ${ph.dotClass}"></span>
+            <span>${ph.label}${alertDot}</span>
+            <span class="phase-count">残り${pendingTasks.length}件 · ${doneTasks.length}/${phaseTasks.length}完了</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${addBtn}
+            <span class="chevron ${isOpen?'open':''}">▼</span>
+          </div>
+        </div>
+        ${isOpen?phaseBody:''}
+      </div>`;
+    });
+  }
+
+  return `<div class="card ${m.archived?'archived':''}">
+    <div class="card-header" onclick="toggleExpand(${mi})">
+      <div class="card-header-left">
+        <div class="member-info">
+          <div class="avatar ${av}">${m.name.slice(0,4)}</div>
+          <div>
+            <div class="member-name">${m.name}</div>
+            <div class="member-sub"><span>${m.dept} · ${jp[1]}/${jp[2]}入社 · 担当: ${m.hr}</span>${flagsHTML}</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${badge}
+        <div class="card-actions">${archiveBtn}</div>
+        <span class="chevron ${m.expanded?'open':''}">▼</span>
+      </div>
+    </div>
+    <div class="progress-section">
+      <div class="prog-bg"><div class="prog-fill" style="width:${prog.pct}%;background:${progColor}"></div></div>
+      <div class="prog-meta"><span>全体進捗 ${prog.pct}%</span><span>${prog.done} / ${prog.total} 完了</span></div>
+    </div>
+    ${m.expanded?`<div class="card-body">${bodyHTML}</div>`:''}
+  </div>`;
+}
+
+function renderAllView(){
+  const list=document.getElementById('memberList');
+  const active=state.members.filter(m=>!m.archived);
+  const archived=state.members.filter(m=>m.archived);
+  let html='';
+  if(active.length===0) html+=`<div class="empty-list">「+ 入社者を追加」から入社者を登録してください</div>`;
+  active.forEach(m=>{const mi=state.members.indexOf(m);html+=renderMemberCard(m,mi);});
+  if(archived.length>0){
+    html+=`<div class="archive-section-toggle" onclick="toggleArchivedSection()"><span class="chevron ${showArchived?'open':''}">▼</span> アーカイブ済み ${archived.length}名を${showArchived?'隠す':'表示する'}</div>`;
+    if(showArchived) archived.forEach(m=>{const mi=state.members.indexOf(m);html+=renderMemberCard(m,mi);});
+  }
+  list.innerHTML=html;
+  updateMetrics();
+}
+
+function renderOwnerView(ownerName){
+  const list=document.getElementById('memberList');
+  let html='';
+  state.members.filter(m=>!m.archived).forEach(m=>{
+    const mi=state.members.indexOf(m);
+    const ownerTasks=m.tasks.filter(t=>t.owner===ownerName);
+    const pending=[...ownerTasks.filter(t=>!t.done)].sort((a,b)=>daysUntil(a.due)-daysUntil(b.due));
+    const done=ownerTasks.filter(t=>t.done);
+    if(ownerTasks.length===0) return;
+    const jp=m.joinDate.split('-');
+    const ck=`owner-done-${mi}`;
+    const showDone=!!openComments[ck];
+    let tasksHTML='';
+    pending.forEach(t=>{tasksHTML+=renderTask(mi,t,false);});
+    if(done.length>0){
+      tasksHTML+=`<div class="done-toggle" onclick="toggleOwnerDone('${ck}')"><span class="chevron ${showDone?'open':''}">▼</span> 完了済み ${done.length}件を${showDone?'隠す':'表示する'}</div>`;
+      if(showDone) done.forEach(t=>{tasksHTML+=renderTask(mi,t,false);});
+    }
+    html+=`<div class="owner-view-card"><div class="owner-member-label">${m.name}（${m.dept} · ${jp[1]}/${jp[2]}入社）— 残り${pending.length}件</div>${tasksHTML}</div>`;
+  });
+  if(!html) html=`<div class="empty-list">担当タスクはありません</div>`;
+  list.innerHTML=html;
+  updateMetrics();
+}
+
+function render(){
+  renderAllView();
+}
+
+function toggleExpand(mi){state.members[mi].expanded=!state.members[mi].expanded;render();}
+function openAddTaskForm(mi,phase,formKey){
+  if(!state.members[mi].phaseExpanded[phase]) state.members[mi].phaseExpanded[phase]=true;
+  openComments[formKey]=true;
+  render();
+}
+function closeAddTaskForm(formKey){
+  openComments[formKey]=false;
+  render();
+}
+function saveNewTask(mi,phase,formKey){
+  const nameEl=document.getElementById(`at-name-${formKey}`);
+  const ownerEl=document.getElementById(`at-owner-${formKey}`);
+  const dueEl=document.getElementById(`at-due-${formKey}`);
+  if(!nameEl||!nameEl.value.trim()){alert('タスク名を入力してください');return;}
+  const maxId=state.members[mi].tasks.reduce((acc,t)=>Math.max(acc,t.id),0);
+  state.members[mi].tasks.push({
+    id:maxId+1,
+    phase,
+    name:nameEl.value.trim(),
+    owner:ownerEl.value.trim()||'未設定',
+    due:dueEl.value||state.members[mi].joinDate,
+    note:'',
+    done:false,
+    comments:[]
+  });
+  openComments[formKey]=false;
+  debouncedSave();
+  render();
+}
+function togglePhase(mi,ph){state.members[mi].phaseExpanded[ph]=!state.members[mi].phaseExpanded[ph];render();}
+function toggleShowDone(mi,ph){state.members[mi].showDone[ph]=!state.members[mi].showDone[ph];render();}
+function toggleOwnerDone(key){openComments[key]=!openComments[key];render();}
+function toggleArchivedSection(){showArchived=!showArchived;render();}
+function toggleTask(mi,tid){
+  const t=state.members[mi].tasks.find(t=>t.id===tid);
+  if(t){t.done=!t.done;debouncedSave();}
+  render();
+}
+function toggleComment(key){openComments[key]=!openComments[key];render();}
+function addComment(mi,tid,key){
+  const input=document.getElementById('ci-'+key);
+  if(!input||!input.value.trim()) return;
+  const t=state.members[mi].tasks.find(t=>t.id===tid);
+  if(!t) return;
+  const now=new Date();
+  t.comments.push({author:state.members[mi].hr||'担当者',date:(now.getMonth()+1)+'/'+(now.getDate()),text:input.value.trim()});
+  debouncedSave();render();
+}
+function archiveMember(mi){
+  if(!confirm(`「${state.members[mi].name}」をアーカイブしますか？`)) return;  state.members[mi].archived=true;state.members[mi].expanded=false;
+  debouncedSave();render();
+}
+function restoreMember(mi){
+  state.members[mi].archived=false;debouncedSave();render();
+}
+function deleteMember(mi){
+  if(!confirm(`「${state.members[mi].name}」を完全に削除します。この操作は取り消せません。よろしいですか？`)) return;
+  state.members.splice(mi,1);debouncedSave();render();
+}
+
+document.getElementById('toggleSettings').addEventListener('click',()=>{
+  const p=document.getElementById('settingsPanel');
+  p.style.display=p.style.display==='none'?'block':'none';
+  if(p.style.display==='block') renderStaffList();
+});
+document.getElementById('toggleForm').addEventListener('click',()=>{
+  const f=document.getElementById('addForm');
+  f.style.display=f.style.display==='none'?'block':'none';
+});
+document.getElementById('cancelForm').addEventListener('click',()=>{
+  document.getElementById('addForm').style.display='none';
+});
+document.getElementById('submitMember').addEventListener('click',()=>{
+  const name=document.getElementById('newName').value.trim();
+  const dept=document.getElementById('newDept').value.trim();
+  const joinDate=document.getElementById('newDate').value;
+  const hr=document.getElementById('newHR').value.trim();
+  const attr=document.getElementById('newAttr').value.trim();
+  if(!name||!joinDate){alert('イニシャルと入社日は必須です');return;}
+  state.members.push({
+    id:state.nextId++,name,dept,joinDate,hr:hr||'未設定',attr,flags:[],archived:false,
+    expanded:true,
+    phaseExpanded:{before:true,join:false,after:false},
+    showDone:{before:false,join:false,after:false},
+    tasks:buildTasks(joinDate,[])
+  });
+  ['newName','newDept','newDate','newHR','newAttr'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('addForm').style.display='none';
+  debouncedSave();render();
+});
+
+renderStaffDatalist();
+loadState().then(loaded=>{state=loaded;render();});
+loadStaff();
+</script>
+</body>
+</html>
