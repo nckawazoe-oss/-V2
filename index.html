@@ -682,7 +682,9 @@ function renderTask(mi,t,showOwner){
   const due=formatDue(t.due,t.done);
   const ck=`${state.members[mi].id}-${t.id}`;
   const dueEditKey=`dueedit-${ck}`;
+  const ownerEditKey=`owneredit-${ck}`;
   const isDueEditing=!!openComments[dueEditKey];
+  const isOwnerEditing=!!openComments[ownerEditKey];
   const isOpen=!!openComments[ck];
   const cCount=t.comments.length;
   const archived=state.members[mi].archived;
@@ -692,13 +694,18 @@ function renderTask(mi,t,showOwner){
     commentsHTML=`<div class="comment-area">${items}<div class="comment-input-row"><input type="text" id="ci-${ck}" placeholder="メモを追加..."><button onclick="addComment(${mi},${t.id},'${ck}')">追加</button></div></div>`;
   }
   const noteHTML=t.note?`<div class="task-note">${t.note}</div>`:'';
-  const ownerHTML=showOwner?`<span class="owner-pill ${ownerPillClass(t.owner)}">${t.owner}</span>`:'';
   const checkClick=archived?'':`onclick="toggleTask(${mi},${t.id})"`;
   const dueHTML=archived
     ?`<span class="${due.cls}">${due.label}</span>`
     :isDueEditing
-      ?`<input type="date" id="due-input-${ck}" value="${t.due}" style="font-size:11px;height:24px;padding:0 5px;border:0.5px solid #185FA5;border-radius:5px;outline:none;color:#1a1a1a" onchange="saveDue(${mi},${t.id},'${ck}','${dueEditKey}')" onblur="saveDue(${mi},${t.id},'${ck}','${dueEditKey}')">`
-      :`<span class="${due.cls}" style="cursor:pointer;text-decoration:underline dotted" onclick="startDueEdit('${dueEditKey}')" title="クリックして期限を編集">${due.label}</span>`;
+      ?`<input type="date" id="due-input-${ck}" value="${t.due}" style="font-size:11px;height:24px;padding:0 5px;border:1px solid var(--accent);border-radius:5px;outline:none;color:var(--text-primary)" onchange="saveDue(${mi},${t.id},'${ck}','${dueEditKey}')" onblur="saveDue(${mi},${t.id},'${ck}','${dueEditKey}')">`
+      :`<span class="${due.cls}" style="cursor:pointer;text-decoration:underline dotted" onclick="startDueEdit('${dueEditKey}')">${due.label}</span>`;
+  const ownerLabel=t.owner||'担当者未設定';
+  const ownerHTML=archived
+    ?`<span class="owner-pill own-other">${ownerLabel}</span>`
+    :isOwnerEditing
+      ?`<input type="text" id="owner-input-${ck}" value="${t.owner||''}" list="staffDatalist" placeholder="担当者名" style="font-size:11px;height:24px;padding:0 6px;border:1px solid var(--accent);border-radius:5px;outline:none;width:90px;color:var(--text-primary)" onblur="saveOwner(${mi},${t.id},'${ck}','${ownerEditKey}')" onkeydown="if(event.key==='Enter')saveOwner(${mi},${t.id},'${ck}','${ownerEditKey}')">`
+      :`<span class="owner-pill own-other" style="cursor:pointer;text-decoration:underline dotted" onclick="startOwnerEdit('${ownerEditKey}','${ck}')">${ownerLabel}</span>`;
   return `<div class="task-row ${t.done?'task-done-row':''}">
     <div class="check ${t.done?'done':''}" ${checkClick} style="${archived?'cursor:default':''}"></div>
     <div class="task-content">
@@ -713,6 +720,24 @@ function renderTask(mi,t,showOwner){
       ${noteHTML}${commentsHTML}
     </div>
   </div>`;
+}
+
+function startOwnerEdit(ownerEditKey,ck){
+  openComments[ownerEditKey]=true;
+  render();
+  setTimeout(()=>{
+    const el=document.getElementById(`owner-input-${ck}`);
+    if(el){el.focus();el.select();}
+  },50);
+}
+
+function saveOwner(mi,tid,ck,ownerEditKey){
+  const el=document.getElementById(`owner-input-${ck}`);
+  if(!el) return;
+  const t=state.members[mi].tasks.find(t=>t.id===tid);
+  if(t){t.owner=el.value.trim();debouncedSave();}
+  openComments[ownerEditKey]=false;
+  render();
 }
 
 function startDueEdit(dueEditKey){
